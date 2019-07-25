@@ -44,7 +44,7 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
       local configMap = k.core.v1.configMap;
       [
         local splitName = std.splitLimit(name, '/', 1);
-        local dashboardName = if std.length(splitName) < 2 then std.strReplace(splitName[0], '.json', '') else std.strReplace(splitName[1], '.json', '');
+        local dashboardName = 'grafana-dashboard-' + if std.length(splitName) < 2 then std.strReplace(splitName[0], '.json', '') else std.strReplace(splitName[1], '.json', '');
         configMap.new(dashboardName, { [name]: std.manifestJsonEx($._config.grafana.dashboards[name], '    ') }) +
         configMap.mixin.metadata.withNamespace($._config.namespace)
 
