@@ -43,7 +43,8 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
     dashboardDefinitions:
       local configMap = k.core.v1.configMap;
       [
-        local dashboardName = 'grafana-dashboard-' + std.strReplace(name, '.json', '');
+        local splitName = std.splitLimit(name, '/', 1);
+        local dashboardName = if std.length(splitName) < 2 then std.strReplace(splitName[0], '.json', '') else std.strReplace(splitName[1], '.json', '');
         configMap.new(dashboardName, { [name]: std.manifestJsonEx($._config.grafana.dashboards[name], '    ') }) +
         configMap.mixin.metadata.withNamespace($._config.namespace)
 
@@ -114,8 +115,10 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
           dashboardsVolumeMount,
         ] +
         [
-          local dashboardName = std.strReplace(name, '.json', '');
-          containerVolumeMount.new('grafana-dashboard-' + dashboardName, '/grafana-dashboard-definitions/0/' + dashboardName)
+          local splitName = std.splitLimit(name, '/', 1);
+          local folderName = if std.length(splitName) > 1 then splitName[0] else "0";
+          local dashboardName = if std.length(splitName) < 2 then std.strReplace(splitName[0], '.json', '') else std.strReplace(splitName[1], '.json', '');
+          containerVolumeMount.new('grafana-dashboard-' + dashboardName, '/grafana-dashboard-definitions/' + folderName + '/' + dashboardName),
           for name in std.objectFields($._config.grafana.dashboards)
         ] +
         if std.length($._config.grafana.config) > 0 then [configVolumeMount] else [];
@@ -127,7 +130,8 @@ local k = import 'ksonnet/ksonnet.beta.3/k.libsonnet';
           dashboardsVolume,
         ] +
         [
-          local dashboardName = 'grafana-dashboard-' + std.strReplace(name, '.json', '');
+          local splitName = std.splitLimit(name, '/', 1);
+          local dashboardName = 'grafana-dashboard-' + if std.length(splitName) < 2 then std.strReplace(splitName[0], '.json', '') else std.strReplace(splitName[1], '.json', '');
           volume.withName(dashboardName) +
           volume.mixin.configMap.withName(dashboardName)
           for name in std.objectFields($._config.grafana.dashboards)
